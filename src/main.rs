@@ -7,9 +7,10 @@ fn main()
 {
     let mut args: Vec<String> = args().collect();
     args.remove(0);
-    let mut grid: Vec<Vec<_>> = Vec::new();
+    let mut img;
     if args.is_empty()
     {
+        let mut grid: Vec<Vec<_>> = Vec::new();
         let mut start_grid: Vec<Vec<u32>>;
         let mut max = 0;
         let mut i = 0;
@@ -47,24 +48,39 @@ fn main()
             }
             grid.push(grid_row);
         }
+        img = ImageBuffer::new(grid.len() as u32, grid[0].len() as u32);
+        for (x, y, pixel) in img.enumerate_pixels_mut()
+        {
+            *pixel = Luma([grid[x as usize][y as usize]])
+        }
     }
     else
     {
         let die: usize = args[0].parse().unwrap();
         let face: usize = args[1].parse().unwrap();
-        grid = vec![Vec::new(); face.pow((die / 2) as u32)];
+        let mut grid =
+            vec![Vec::with_capacity(face.pow((die / 2) as u32)); face.pow((die / 2) as u32)];
         let common_sum = (die + (die * face)) / 2;
         let line = face.pow((die / 2) as u32);
-        let mut faces = Vec::new();
+        let mut faces = Vec::with_capacity(die);
         let mut place = (0, 0);
         get_dimensions(
             die, face, common_sum, line, &mut place, &mut grid, &mut faces,
-        )
-    }
-    let mut img = ImageBuffer::new(grid.len() as u32, grid[0].len() as u32);
-    for (x, y, pixel) in img.enumerate_pixels_mut()
-    {
-        *pixel = Luma([grid[x as usize][y as usize]])
+        );
+        img = ImageBuffer::new(grid.len() as u32, grid[0].len() as u32);
+        for (x, y, pixel) in img.enumerate_pixels_mut()
+        {
+            *pixel = Luma([
+                if grid[x as usize][y as usize]
+                {
+                    255u8
+                }
+                else
+                {
+                    0u8
+                },
+            ])
+        }
     }
     if args.is_empty()
     {
@@ -72,7 +88,23 @@ fn main()
     }
     else
     {
-        img.save(args.join("_") + ".png").unwrap();
+        img.save(
+            args.iter()
+                .map(|n| {
+                    if n.len() == 1
+                    {
+                        "0".to_owned() + n
+                    }
+                    else
+                    {
+                        n.to_string()
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("_")
+                + ".png",
+        )
+        .unwrap();
     }
 }
 fn get_dimensions(
@@ -81,7 +113,7 @@ fn get_dimensions(
     common_sum: usize,
     line: usize,
     place: &mut (usize, usize),
-    grid: &mut Vec<Vec<u8>>,
+    grid: &mut Vec<Vec<bool>>,
     faces: &mut Vec<usize>,
 )
 {
@@ -102,15 +134,6 @@ fn get_dimensions(
             place.1 += 1;
         }
         place.0 += 1;
-        grid[place.1].push(
-            if faces.iter().sum::<usize>() == common_sum
-            {
-                255u8
-            }
-            else
-            {
-                0u8
-            },
-        );
+        grid[place.1].push(faces.iter().sum::<usize>() == common_sum);
     }
 }
