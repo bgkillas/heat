@@ -81,5 +81,12 @@ fn main()
     {
         *pixel = Luma(grid[x as usize][y as usize])
     }
-    img.save("/home/binary_image.png").unwrap();
+    if args.is_empty()
+    {
+        img.save("/home/binary_image.png").unwrap();
+    }
+    else
+    {
+        img.save(args.join("_") + ".png").unwrap();
+    }
 }
