@@ -43,7 +43,7 @@ fn main()
             let mut grid_row = Vec::new();
             for num in row
             {
-                grid_row.push([((num as f64 / max as f64) * 255.0).round() as u8])
+                grid_row.push(((num as f64 / max as f64) * 255.0).round() as u8)
             }
             grid.push(grid_row);
         }
@@ -54,32 +54,17 @@ fn main()
         let face: usize = args[1].parse().unwrap();
         grid = vec![Vec::new(); face.pow((die / 2) as u32)];
         let common_sum = (die + (die * face)) / 2;
-        for place in 0..face.pow(die as u32)
-        {
-            let mut num = place;
-            let mut faces = Vec::new();
-            for pos in (0..die).rev()
-            {
-                let res = num / face.pow(pos as u32);
-                num -= res * face.pow(pos as u32);
-                faces.push(res + 1);
-            }
-            grid[place / face.pow((die / 2) as u32)].push(
-                if faces.iter().sum::<usize>() == common_sum
-                {
-                    [255u8]
-                }
-                else
-                {
-                    [0u8]
-                },
-            );
-        }
+        let line = face.pow((die / 2) as u32);
+        let mut faces = Vec::new();
+        let mut place = (0, 0);
+        get_dimensions(
+            die, face, common_sum, line, &mut place, &mut grid, &mut faces,
+        )
     }
     let mut img = ImageBuffer::new(grid.len() as u32, grid[0].len() as u32);
     for (x, y, pixel) in img.enumerate_pixels_mut()
     {
-        *pixel = Luma(grid[x as usize][y as usize])
+        *pixel = Luma([grid[x as usize][y as usize]])
     }
     if args.is_empty()
     {
@@ -88,5 +73,44 @@ fn main()
     else
     {
         img.save(args.join("_") + ".png").unwrap();
+    }
+}
+fn get_dimensions(
+    die: usize,
+    face: usize,
+    common_sum: usize,
+    line: usize,
+    place: &mut (usize, usize),
+    grid: &mut Vec<Vec<u8>>,
+    faces: &mut Vec<usize>,
+)
+{
+    if faces.len() != die
+    {
+        for i in 1..face + 1
+        {
+            faces.push(i);
+            get_dimensions(die, face, common_sum, line, place, grid, faces);
+            faces.pop();
+        }
+    }
+    else
+    {
+        if place.0 >= line
+        {
+            place.0 = 0;
+            place.1 += 1;
+        }
+        place.0 += 1;
+        grid[place.1].push(
+            if faces.iter().sum::<usize>() == common_sum
+            {
+                255u8
+            }
+            else
+            {
+                0u8
+            },
+        );
     }
 }
