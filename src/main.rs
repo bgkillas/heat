@@ -7,10 +7,11 @@ fn main()
 {
     let mut args: Vec<String> = args().collect();
     args.remove(0);
-    let mut start_grid: Vec<Vec<u32>>;
-    let mut max = 0;
+    let mut grid: Vec<Vec<_>> = Vec::new();
     if args.is_empty()
     {
+        let mut start_grid: Vec<Vec<u32>>;
+        let mut max = 0;
         let mut i = 0;
         let mut input = String::new();
         stdin().read_to_string(&mut input).unwrap();
@@ -37,13 +38,21 @@ fn main()
                 }
             }
         }
+        for row in start_grid
+        {
+            let mut grid_row = Vec::new();
+            for num in row
+            {
+                grid_row.push([((num as f64 / max as f64) * 255.0).round() as u8])
+            }
+            grid.push(grid_row);
+        }
     }
     else
     {
-        max = 1;
         let die: usize = args[0].parse().unwrap();
         let face: usize = args[1].parse().unwrap();
-        start_grid = vec![Vec::new(); face.pow((die / 2) as u32)];
+        grid = vec![Vec::new(); face.pow((die / 2) as u32)];
         let common_sum = (die + (die * face)) / 2;
         for place in 0..face.pow(die as u32)
         {
@@ -55,27 +64,17 @@ fn main()
                 num -= res * face.pow(pos as u32);
                 faces.push(res + 1);
             }
-            start_grid[place / face.pow((die / 2) as u32)].push(
+            grid[place / face.pow((die / 2) as u32)].push(
                 if faces.iter().sum::<usize>() == common_sum
                 {
-                    1
+                    [255u8]
                 }
                 else
                 {
-                    0
+                    [0u8]
                 },
             );
         }
-    }
-    let mut grid: Vec<Vec<_>> = Vec::new();
-    for row in start_grid
-    {
-        let mut grid_row = Vec::new();
-        for num in row
-        {
-            grid_row.push([((num as f64 / max as f64) * 255.0).round() as u8])
-        }
-        grid.push(grid_row);
     }
     let mut img = ImageBuffer::new(grid.len() as u32, grid[0].len() as u32);
     for (x, y, pixel) in img.enumerate_pixels_mut()
