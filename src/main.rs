@@ -11,8 +11,9 @@ fn main()
     if args.is_empty()
     {
         let mut grid: Vec<Vec<_>> = Vec::new();
-        let mut start_grid: Vec<Vec<u32>>;
-        let mut max = 0;
+        let mut start_grid: Vec<Vec<i32>>;
+        let mut max = i32::MIN;
+        let mut min = i32::MAX;
         let mut i = 0;
         let mut input = String::new();
         stdin().read_to_string(&mut input).unwrap();
@@ -20,7 +21,7 @@ fn main()
         let mut word = String::new();
         for c in input.chars()
         {
-            if c.is_numeric()
+            if c.is_numeric() || c == '-'
             {
                 word.push(c)
             }
@@ -31,6 +32,10 @@ fn main()
                 if num > max
                 {
                     max = num;
+                }
+                if num < min
+                {
+                    min = num;
                 }
                 start_grid[i].push(num);
                 if c == '\n'
@@ -44,7 +49,14 @@ fn main()
             let mut grid_row = Vec::new();
             for num in row
             {
-                grid_row.push(((num as f64 / max as f64) * 255.0).round() as u8)
+                if min < 0
+                {
+                    grid_row.push((((num - min) as f64 / (max - min) as f64) * 255.0).round() as u8)
+                }
+                else
+                {
+                    grid_row.push(((num as f64 / max as f64) * 255.0).round() as u8)
+                }
             }
             grid.push(grid_row);
         }
